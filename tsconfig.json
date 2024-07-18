@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": false,
+    "target": "es2020",
+    "allowSyntheticDefaultImports": false,
+    "outDir": "./dist",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "module": "CommonJS"
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "include": [
+    "src/**/*"
+  ]
+}
