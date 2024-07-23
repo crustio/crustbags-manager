@@ -195,7 +195,56 @@ async function submitStorageProof(task: any) {
 }
 
 async function claimRewards() {
-    // TODO: claim rewards by task state
+    while (true) {
+        const tasks = await Task.model.findAll({
+            where: {
+                task_state: TaskState.period_finish
+            },
+            limit: 100
+        });
+        if (tasks.length === 0) {
+            await sleep(60 * 1000);
+            continue;
+        }
+        for (const task of tasks) {
+            await claimReward(task);
+        }
+    }
+}
+
+async function claimReward(task: any) {
+    const order = (await Order.model.findAll({
+        where: {
+            id: task.order_id
+        }
+    }))[0];
+    const provider = await getTonProvider();
+    const storageContract = provider.getTonClient().open(StorageContract.createFromAddress(order.address));
+    const key = await mnemonicToWalletKey(configs.task.providerMnemonic.split(" "));
+    const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
+    const walletContract = provider.getTonClient().open(wallet);
+    const sender = walletContract.sender(key.secretKey);
+    let earned = await storageContract.getEarned(sender.address);
+    let update: any = {
+        task_state: TaskState.task_finish
+    }
+    if (earned > 0n) {
+        await storageContract.sendClaimStorageRewards(sender);
+        let retry = 0, claimSuccess = false;
+        while (earned != 0n || retry < 10) {
+            earned = await storageContract.getEarned(sender.address);
+            retry++;
+        }
+        update = {
+            task_state: claimSuccess ? TaskState.task_finish : TaskState.period_finish,
+            total_rewards: claimSuccess ? earned : 0
+        }
+    }
+    await Task.model.update(update, {
+        where: {
+            id: task.id,
+        }
+    });
 }
 
 async function generateTasks() {

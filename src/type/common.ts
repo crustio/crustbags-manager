@@ -15,4 +15,5 @@ export enum TaskState {
     unregister_storage_provider = 0,
     submit_storage_proof = 1,
     period_finish = 2,
+    task_finish = 3
 }

@@ -40,6 +40,11 @@ export class Task {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 defaultValue: 0
+            },
+            total_rewards: {
+                type: DataTypes.BIGINT,
+                allowNull: false,
+                defaultValue: 0
             }
         }, {
             indexes: [
