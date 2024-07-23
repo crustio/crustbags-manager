@@ -30,7 +30,7 @@ export class Transaction {
                 type: DataTypes.INTEGER,
                 allowNull: false
             },
-            order_index: {
+            need_save_order: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 defaultValue: 0
@@ -46,6 +46,9 @@ export class Transaction {
                 },
                 {
                     fields: ["op_code"]
+                },
+                {
+                    fields: ["need_save_order"]
                 },
                 {
                     fields: ["tx_hash", "lt"],

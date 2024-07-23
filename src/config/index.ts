@@ -1,14 +1,22 @@
 import {getEnvOrExit} from "../util/common";
 import {ENV} from "../type/common";
 
-export const env = {
+export const env = getEnvOrExit("ENV", "dev") as ENV;
+
+export const isDev = env === "dev";
+
+export const configs = {
     // SQLite database path
     dbPath: getEnvOrExit("DB_PATH", "./data"),
-    // Environment(dev|prod)
-    env: getEnvOrExit("ENV", "dev") as ENV,
     // TON Archive server host
     ton: {
-        host: getEnvOrExit("TON_ARCHIVE_NODE_HOST", ""),
-        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", ""),
+        host: getEnvOrExit("TON_ARCHIVE_NODE_HOST", "", !isDev),
+        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "kQD8ntXDohGn8GPVfxX5BF6zfgl7A_fks-8QoVcmKx5TE5M-"),
+    },
+    task: {
+        minReward: BigInt(getEnvOrExit("TASK_MIN_REWARD", "0", false)),
+        maxFileSize: BigInt(getEnvOrExit("TASK_MAX_FILE_SIZE", "10485760", false)),
+        providerMnemonic: getEnvOrExit("TASK_PROVIDER_MNEMONIC"),
+        providerMinBalance: getEnvOrExit("TASK_PROVIDER_MIN_BALANCE", "1000000000"),
     }
 }

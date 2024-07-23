@@ -1,6 +1,6 @@
 import {Config, getHttpEndpoint} from "@orbs-network/ton-access";
 import {Address, TonClient, Transaction} from "@ton/ton";
-import {env} from "../config";
+import {configs, isDev} from "../config";
 import {fetchWithRetry} from "./common";
 import {AxiosError} from "axios";
 
@@ -9,6 +9,8 @@ export type TransactionResult = {
     e?: Error,
     status: "ok" | "expire" | "failed"
 }
+
+let defaultProvider: TonProvider;
 
 export class TonProvider {
 
@@ -101,11 +103,19 @@ export class TonProvider {
 
 }
 
-export const TONProvider = async(): Promise<TonProvider> => {
-    return env.env === "dev" ? await TonProvider.init({
+const TONProvider = async(): Promise<TonProvider> => {
+    return isDev ? await TonProvider.init({
         network: "testnet"
     }) : await TonProvider.init({
         network: "mainnet",
-        host: env.ton.host
+        host: configs.ton.host
     });
 }
+
+export const getTonProvider = async(): Promise<TonProvider> => {
+    if (!defaultProvider) {
+        defaultProvider = await TONProvider();
+    }
+    return defaultProvider;
+}
+

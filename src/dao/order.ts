@@ -1,6 +1,7 @@
 import {sequelize} from "../db";
 import {DataTypes} from "sequelize";
 import {ModelStatic} from "sequelize/types/model";
+import {OrderState} from "../type/common";
 export class Order {
     static model: ModelStatic<any> = sequelize.define(
         'orders', {
@@ -35,10 +36,6 @@ export class Order {
                 type: DataTypes.BIGINT,
                 allowNull: false
             },
-            total_rewards: {
-                type: DataTypes.BIGINT,
-                allowNull: false
-            },
             max_storage_proof_span_in_sec: {
                 type: DataTypes.BIGINT,
                 allowNull: false
@@ -52,6 +49,10 @@ export class Order {
                 allowNull: false,
                 defaultValue: 0,
             },
+            total_rewards: {
+                type: DataTypes.BIGINT,
+                allowNull: false
+            },
             period_finish: {
                 type: DataTypes.BIGINT,
                 allowNull: false,
@@ -61,7 +62,12 @@ export class Order {
                 type: DataTypes.TEXT,
                 allowNull: false,
                 defaultValue: "{}"
-            }
+            },
+            order_state: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: OrderState.not_started,
+            },
         }, {
             indexes: [
                 {
@@ -78,6 +84,9 @@ export class Order {
                 },
                 {
                     fields: ["period_finish"]
+                },
+                {
+                    fields: ["order_state"]
                 }
             ]
         }

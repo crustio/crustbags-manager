@@ -1,4 +1,14 @@
-import {beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, toNano} from "@ton/core";
+import {
+    beginCell, Builder,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    DictionaryKey, DictionaryValue,
+    Sender,
+    SendMode, Slice,
+    toNano
+} from "@ton/core";
 import {Address} from "@ton/ton";
 import {
     op_recycle_undistributed_storage_fees, op_unregister_as_storage_provider, op_submit_storage_proof,
@@ -10,6 +20,28 @@ export type StorageContractConfig = {};
 export function storageContractConfigToCell(config: StorageContractConfig): Cell {
     return beginCell().endCell();
 }
+
+const number256DictionaryKey: DictionaryKey<bigint> = {
+    bits: 256,
+
+    serialize(src: bigint): bigint {
+        return BigInt(src);
+    },
+
+    parse(src: bigint): bigint {
+        return src
+    }
+};
+
+const cellDictionaryValue: DictionaryValue<Cell> = {
+
+    serialize(src: Cell, builder: Builder) {
+    },
+
+    parse(src: Slice): Cell {
+        return src.loadRef();
+    }
+};
 
 export class StorageContract implements Contract {
     constructor(
@@ -150,7 +182,6 @@ export class StorageContract implements Contract {
             .storeUint(0, 64) // queryId
             .storeRef(beginCell().storeUint(merkleRoot, 256).endCell())
             .endCell();
-
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: messsage,
@@ -171,5 +202,32 @@ export class StorageContract implements Contract {
             body: messsage,
             value: toNano('0.1'),
         });
+    }
+
+    async getStorageProviderLastProofTime(provider: ContractProvider, providerAddress: Address): Promise<number | null> {
+        const state = await provider.getState();
+        if (state.state.type === "active") {
+            const cell = Cell.fromBoc(state.state.data!);
+            const firstCell = cell[0];
+            const ds = firstCell.beginParse();
+            const orderInfo = ds.loadRef();
+            const rewardsParams = ds.loadRef();
+            const storageProvidersInfo = ds.loadRef();
+            const storageProvidersInfoDs = storageProvidersInfo.beginParse();
+
+            const storageProviders = storageProvidersInfoDs.loadDict<bigint, Cell>(number256DictionaryKey, cellDictionaryValue);
+            const storageProviderLastProofTimes = storageProvidersInfoDs.loadDict<bigint, Cell>(number256DictionaryKey, cellDictionaryValue);
+            const storageProviderLastProofValid = storageProvidersInfoDs.loadDict<bigint, Cell>(number256DictionaryKey, cellDictionaryValue);
+            const storageProviderNextProofs = storageProvidersInfoDs.loadDict<bigint, Cell>(number256DictionaryKey, cellDictionaryValue);
+            const providerAddressBigInt = this.parseStdAddr(providerAddress);
+            if (storageProviderLastProofTimes.has(providerAddressBigInt)) {
+                return storageProviderLastProofTimes.get(providerAddressBigInt).beginParse().loadUint(32);
+            }
+        }
+        return null;
+    }
+
+    parseStdAddr(address: Address): bigint {
+        return BigInt("0x" + address.hash.toString('hex'))
     }
 }

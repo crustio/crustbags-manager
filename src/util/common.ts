@@ -16,6 +16,10 @@ export function sleep(ms: number) {
   });
 }
 
+export function now() {
+  return Math.round(new Date().getTime()/1000);
+}
+
 export const fetchWithRetry = async<T>(func: Promise<T>, retries: number = 3, retryDelay = 1000): Promise<T> => {
   let err;
   for (let i = 0; i < retries; i++) {

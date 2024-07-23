@@ -1,10 +1,10 @@
 const { Sequelize } = require('sequelize');
-import {env} from "../config";
+import {configs, isDev} from "../config";
 
 export const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: `${env.dbPath}/db.sqlite`,
-    logging: env.env === 'dev'
+    storage: `${configs.dbPath}/db.sqlite`,
+    logging: isDev
 });
 
 

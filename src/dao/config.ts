@@ -1,7 +1,7 @@
 import {sequelize} from "../db";
-import {DataTypes} from "sequelize";
-import {ModelStatic} from "sequelize/types/model";
-export class ConfigModel {
+import {DataTypes, Transaction} from "sequelize";
+import {ModelStatic, UpdateOptions} from "sequelize/types/model";
+export class Config {
     static model: ModelStatic<any>  = sequelize.define(
         'configs', {
             id: {
@@ -21,6 +21,23 @@ export class ConfigModel {
             }
         }
     );
+
+    static async updateConfig(key:string, value: string, transaction?: Transaction) {
+        let condition: UpdateOptions = {
+            where: {
+                config_key: key
+            }
+        }
+        if (transaction) {
+            condition = {
+                ...condition,
+                transaction
+            }
+        }
+        return await this.model.update({
+            config_value: value
+        }, condition);
+    }
 
     static async queryConfig(key: string): Promise<string|null> {
         const result = await this.model.findAll({
@@ -42,5 +59,10 @@ export class ConfigModel {
     static async getBool(key: string): Promise<boolean> {
         const result = await this.queryConfig(key);
         return result === "true";
+    }
+
+    static async getInt(key: string, defaultValue: number): Promise<number> {
+        const result = await this.queryConfig(key);
+        return result ? parseInt(result) : defaultValue;
     }
 }
