@@ -11,7 +11,7 @@ export const configs = {
     // TON Archive server host
     ton: {
         host: getEnvOrExit("TON_ARCHIVE_NODE_HOST", "", !isDev),
-        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "kQD8ntXDohGn8GPVfxX5BF6zfgl7A_fks-8QoVcmKx5TE5M-"),
+        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "EQAiRfFdxEf5dmSb2cEpq8pjhyHts6hmoI1woHqLRPRwZKuw"),
     },
     task: {
         minReward: BigInt(getEnvOrExit("TASK_MIN_REWARD", "0", false)),

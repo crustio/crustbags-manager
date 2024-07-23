@@ -29,7 +29,7 @@ export async function jobs() {
     const register = registerStorageProvider();
     const uploadProof = uploadStorageProofs();
     const claim = claimRewards();
-    const jobs = [analysisTx, queryTx, updateOrder, generate, register, uploadProof, claim];
+    const jobs = [queryTx, analysisTx, updateOrder, generate, register, uploadProof, claim];
     return Promise.all(jobs).catch(e => {
         logger.error(`Error in jobs: ${e.stack}`);
         throw new Error(e);
@@ -50,7 +50,7 @@ async function registerStorageProvider() {
             limit: 10
         });
         if (tasks.length === 0) {
-            logger.info("Provider balance is not enough, waiting for balance...");
+            logger.info("No task to register...");
             await sleep(60 * 1000);
             continue;
         }
@@ -72,11 +72,23 @@ async function registerProvider(task: any) {
     const storageContract = provider.getTonClient().open(StorageContract.createFromAddress(Address.parse(order.address)));
     const walletContract = provider.getTonClient().open(wallet);
     const sender = walletContract.sender(key.secretKey);
+    let registerSuccess = await checkRegisterSuccess(wallet.address, Address.parse(order.address), false);
+    if (registerSuccess) {
+        return await Task.model.update({
+            task_state: TaskState.submit_storage_proof,
+            provider_address: wallet.address.toString()
+        }, {
+            where: {
+                id: task.id
+            }
+        });
+    }
     await storageContract.sendRegisterAsStorageProvider(sender);
-    const registerSuccess = await checkRegisterSuccess(sender.address);
+    registerSuccess = await checkRegisterSuccess(sender.address, Address.parse(order.address));
     if (registerSuccess) {
         await Task.model.update({
-            task_state: TaskState.submit_storage_proof
+            task_state: TaskState.submit_storage_proof,
+            provider_address: sender.address.toString()
         }, {
             where: {
                 id: task.id
@@ -88,16 +100,19 @@ async function registerProvider(task: any) {
 /**
  * Check register success(get next proof for 10 times)
  */
-async function checkRegisterSuccess(address: Address): Promise<boolean> {
+async function checkRegisterSuccess(address: Address, orderAddress: Address, retry: boolean = true): Promise<boolean> {
     const provider = await getTonProvider();
-    const storageContract = provider.getTonClient().open(StorageContract.createFromAddress(address));
+    const storageContract = provider.getTonClient().open(StorageContract.createFromAddress(orderAddress));
+    console.log(`userAddress: ${address.toString()}`)
     let nextProof = await storageContract.getNextProof(address);
-    let retryTimes = 0;
-    while (nextProof == -1n && retryTimes > 10) {
-        nextProof = await storageContract.getNextProof(address);
-        retryTimes++;
+    if (retry) {
+        let retryTimes = 0;
+        while (nextProof == -1n && retryTimes > 10) {
+            nextProof = await storageContract.getNextProof(address);
+            retryTimes++;
+        }
     }
-    return nextProof == -1n;
+    return nextProof != -1n;
 }
 
 async function getProviderAddress(): Promise<Address> {
@@ -108,7 +123,7 @@ async function getProviderAddress(): Promise<Address> {
 
 async function checkBalance(): Promise<boolean> {
     const provider = await getTonProvider();
-    const address = await getProviderAddress()
+    const address = await getProviderAddress();
     if (!await provider.getTonClient().isContractDeployed(address)) {
         logger.error("Provider wallet not deployed");
         return false;

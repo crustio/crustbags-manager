@@ -28,6 +28,14 @@ export class Config {
                 config_key: key
             }
         }
+        const exit = await this.model.findOne(condition);
+        if (!exit) {
+            const option = transaction ? {transaction} : {};
+            return await this.model.create({
+                config_key: key,
+                config_value: value
+            }, option);
+        }
         if (transaction) {
             condition = {
                 ...condition,
@@ -46,7 +54,7 @@ export class Config {
             }
         });
         if (result.length > 0) {
-            return result[0].config_key
+            return result[0].config_value
         }
         return null;
     }
