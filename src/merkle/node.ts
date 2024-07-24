@@ -62,7 +62,7 @@ if (isMainThread) {
     if (bd.downloaded !== bd.size) {
       throw "Bag not downloaded";
     }
-    if (![].includes(wd.type)) {
+    if (!["getProofs", "getMerkleRoot"].includes(wd.type)) {
       throw "Type error";
     }
     const files = bd.files as { index: number; name: string; size: number }[];
