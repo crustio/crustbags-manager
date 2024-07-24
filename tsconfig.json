@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "target": "es2020",
-    "allowSyntheticDefaultImports": false,
+    "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
     "sourceMap": true,
     "skipLibCheck": true,
