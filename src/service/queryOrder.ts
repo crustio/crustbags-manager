@@ -7,7 +7,7 @@ import {TransactionDescriptionGeneric} from "@ton/core/src/types/TransactionDesc
 import {TransactionComputeVm} from "@ton/core/src/types/TransactionComputePhase";
 import {sequelize} from "../db";
 import {Transaction} from "../dao/transaction";
-import {Op, Transaction as DBTransaction} from "sequelize";
+import {Op, or, Transaction as DBTransaction} from "sequelize";
 import {exit_success, op_place_storage_order} from "../wrapper/constants";
 import {OrderState, TaskState, Valid} from "../type/common";
 import {Order} from "../dao/order";
@@ -16,6 +16,14 @@ import {Config} from "../dao/config";
 import {Task} from "../dao/task";
 import {mnemonicToWalletKey} from "@ton/crypto";
 import {StorageContract} from "../wrapper/StorageContract";
+import {
+    addTonBag,
+    downloadChildTonBag,
+    downloadHeaderSuccess,
+    downloadTonBag,
+    downloadTonBagSuccess
+} from "../merkle/tonsutils";
+const node = require('../merkle/node');
 
 const LAST_ORDER_UPDATE_ID = "LAST_ORDER_UPDATE_ID";
 const LAST_TASK_GENERATE_ORDER_ID = "LAST_TASK_GENERATE_ORDER_ID";
@@ -26,14 +34,133 @@ export async function jobs() {
     const analysisTx = analysisOrders();
     const updateOrder = updateOrderState();
     const generate = generateTasks();
+    const downloadHeaders = downloadTorrentHeaders();
+    const downloadChild = downloadChildFiles();
+    const fileState = updateFileState();
     const register = registerStorageProvider();
     const uploadProof = uploadStorageProofs();
     const claim = claimRewards();
-    const jobs = [queryTx, analysisTx, updateOrder, generate, register, uploadProof, claim];
+    const jobs = [queryTx, analysisTx, updateOrder, generate, downloadHeaders, downloadChild, fileState, register, uploadProof, claim];
     return Promise.all(jobs).catch(e => {
         logger.error(`Error in jobs: ${e.stack}`);
         throw new Error(e);
     });
+}
+
+async function updateFileState() {
+    while(true) {
+        const tasks = await Task.model.findAll({
+            where: {
+                task_state: {
+                    [Op.in]: [
+                        TaskState.download_torrent_start,
+                        TaskState.download_torrent_child_file_start
+                    ]
+                }
+            },
+            limit: 10
+        });
+        if (tasks.length === 0) {
+            await sleep(60 * 1000);
+            continue;
+        }
+        for (const task of tasks) {
+            const order = (await Order.model.findAll({
+                where: {
+                    id: task.order_id
+                }
+            }))[0];
+            const torrentHash = order.torrent_hash;
+            if (task.task_state === TaskState.download_torrent_start && await downloadHeaderSuccess(torrentHash)) {
+                await Task.model.update({
+                    task_state: TaskState.download_torrent_header_success
+                }, {
+                    where: {
+                        id: task.id
+                    }
+                });
+            }
+            if (task.task_state === TaskState.download_torrent_child_file_start && await downloadTonBagSuccess(torrentHash)) {
+                await Task.model.update({
+                    task_state: TaskState.download_torrent_success
+                }, {
+                    where: {
+                        id: task.id
+                    }
+                });
+            }
+        }
+    }
+}
+
+async function downloadTorrentHeaders() {
+    while(true) {
+        const tasks = await Task.model.findAll({
+            where: {
+                task_state: TaskState.unregister_storage_provider
+            },
+            limit: 10
+        });
+        if (tasks.length === 0) {
+            await sleep(60 * 1000);
+            continue;
+        }
+        for (const task of tasks) {
+            const order = (await Order.model.findAll({
+                where: {
+                    id: task.order_id
+                }
+            }))[0];
+            const torrentHash = order.torrent_hash;
+            try {
+                await addTonBag(torrentHash);
+            } catch (e) {
+                logger.error(`Failed to download meta bag ${torrentHash}: ${e}`);
+            }
+            await Task.model.update({
+                task_state: TaskState.download_torrent_start
+            }, {
+                where: {
+                    id: task.id
+                }
+            });
+        }
+    }
+}
+
+async function downloadChildFiles() {
+    while (true) {
+        const tasks = await Task.model.findAll({
+            where: {
+                task_state: TaskState.download_torrent_header_success
+            },
+            limit: 10
+        });
+        if (tasks.length === 0) {
+            await sleep(60 * 1000);
+            continue;
+        }
+        for (const task of tasks) {
+            const order = (await Order.model.findAll({
+                where: {
+                    id: task.order_id
+                }
+            }))[0];
+            const torrentHash = order.torrent_hash;
+            try {
+                await downloadChildTonBag(torrentHash);
+            } catch (e) {
+                logger.error(`Failed to download child bag ${torrentHash}: ${e}`);
+            }
+            await Task.model.update({
+                task_state: TaskState.download_torrent_child_file_start
+            }, {
+                where: {
+                    id: task.id
+                }
+            });
+        }
+    }
 }
 
 async function registerStorageProvider() {
@@ -45,7 +172,7 @@ async function registerStorageProvider() {
         }
         const tasks = await Task.model.findAll({
             where: {
-                task_state: TaskState.unregister_storage_provider
+                task_state: TaskState.download_torrent_success
             },
             limit: 10
         });
@@ -193,9 +320,8 @@ async function submitStorageProof(task: any) {
         return;
     }
     const torrentHash = order.torrent_hash;
-    // TODO: get merkle root by torrent hash
-    const merkleRoot: bigint = 0n;
-    await storageContract.sendSubmitStorageProof(sender, merkleRoot);
+    const proofs: bigint[] = await node.getProofs(torrentHash, nextProof);
+    await storageContract.sendSubmitStorageProof(sender, proofs);
     const lastProofTime = await storageContract.getStorageProviderLastProofTime(wallet.address);
     if (lastProofTime) {
         await Task.model.update({

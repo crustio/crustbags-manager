@@ -13,7 +13,11 @@ export enum OrderState {
 
 export enum TaskState {
     unregister_storage_provider = 0,
-    submit_storage_proof = 1,
-    period_finish = 2,
-    task_finish = 3
+    download_torrent_start = 1,
+    download_torrent_header_success = 2,
+    download_torrent_child_file_start = 3,
+    download_torrent_success = 4,
+    submit_storage_proof = 5,
+    period_finish = 6,
+    task_finish = 7
 }

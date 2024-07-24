@@ -67,7 +67,7 @@ export async function addTonBag({
   });
 }
 
-export async function downTonBag(bag_id: string, waitCompleted: boolean = false) {
+export async function downloadTonBag(bag_id: string, waitCompleted: boolean = false) {
   await addTonBag({ bag_id });
   let bd: BagDetail;
   // check header
@@ -89,4 +89,21 @@ export async function downTonBag(bag_id: string, waitCompleted: boolean = false)
     }
   }
   return true
+}
+
+export async function downloadChildTonBag(bag_id: string) {
+  const bd = await getTonBagDetails(bag_id);
+  if (bd.header_loaded) {
+    await addTonBag({ bag_id, files: bd.files.map((f) => f.index), donwload_all: true });
+  }
+}
+
+export async function downloadTonBagSuccess(bag_id: string): Promise<boolean> {
+    const bd = await getTonBagDetails(bag_id);
+    return bd.downloaded == bd.size;
+}
+
+export async function downloadHeaderSuccess(bag_id: string): Promise<boolean> {
+    const bd = await getTonBagDetails(bag_id);
+    return bd.header_loaded;
 }

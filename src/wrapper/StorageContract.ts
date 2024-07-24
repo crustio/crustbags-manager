@@ -14,6 +14,7 @@ import {
     op_recycle_undistributed_storage_fees, op_unregister_as_storage_provider, op_submit_storage_proof,
     op_register_as_storage_provider, op_claim_storage_rewards
 } from './constants';
+import {proofsIntoBody} from "./proofsutils";
 
 export type StorageContractConfig = {};
 
@@ -175,16 +176,16 @@ export class StorageContract implements Contract {
     }
 
     async sendSubmitStorageProof(
-        provider: ContractProvider, via: Sender, merkleRoot: bigint
+        provider: ContractProvider, via: Sender, proofs: bigint[]
     ) {
         const messsage = beginCell()
             .storeUint(op_submit_storage_proof, 32) // op
             .storeUint(0, 64) // queryId
-            .storeRef(beginCell().storeUint(merkleRoot, 256).endCell())
-            .endCell();
+        ;
+        proofsIntoBody(messsage, proofs);
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: messsage,
+            body: messsage.endCell(),
             value: toNano('0.1'),
         });
     }
