@@ -1,8 +1,10 @@
 import {Config, getHttpEndpoint} from "@orbs-network/ton-access";
-import {Address, TonClient, Transaction} from "@ton/ton";
+import {Address, OpenedContract, TonClient, Transaction, WalletContractV4} from "@ton/ton";
 import {configs, isDev} from "../config";
 import {fetchWithRetry} from "./common";
 import {AxiosError} from "axios";
+import {StorageContract} from "../wrapper/StorageContract";
+import {mnemonicToWalletKey} from "@ton/crypto";
 
 export type TransactionResult = {
     tx?: Transaction,
@@ -19,6 +21,7 @@ export class TonProvider {
         this.client = client;
     }
 
+
     static async init(config?: Config): Promise<TonProvider> {
         const endpoint = await getHttpEndpoint(config);
         const client = new TonClient({endpoint});
@@ -27,6 +30,16 @@ export class TonProvider {
 
     getTonClient(): TonClient {
         return this.client;
+    }
+
+    getStorageContract(address: string) {
+        return this.client.open(StorageContract.createFromAddress(Address.parse(address)));
+    }
+
+    async getProviderAddress(): Promise<Address> {
+        const key = await mnemonicToWalletKey(configs.task.providerMnemonic.split(" "));
+        const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
+        return wallet.address;
     }
 
     async getContractState(address: Address): Promise<{

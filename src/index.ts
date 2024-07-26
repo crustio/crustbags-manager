@@ -1,12 +1,13 @@
 import {initDb} from "./db";
 import {logger} from "./util/logger";
-import {jobs} from "./service/queryOrder";
+import {job} from "./service/job";
 import {getTonProvider} from "./util/ton";
+const node = require('./merkle/node');
 
 async function main() {
     await initDb();
     await getTonProvider();
-    await jobs();
+    await job();
 }
 
 main().catch((e) => {

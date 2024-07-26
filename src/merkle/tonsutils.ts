@@ -72,7 +72,7 @@ export async function downloadTonBag(bag_id: string, waitCompleted: boolean = fa
   let bd: BagDetail;
   // check header
   while (true) {
-    await sleep(1000);
+    await sleep(1);
     bd = await getTonBagDetails(bag_id);
     if (bd.header_loaded) {
       break;

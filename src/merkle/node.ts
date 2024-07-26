@@ -3,6 +3,7 @@ import path from "path";
 import { isMainThread, parentPort, Worker, workerData } from "worker_threads";
 import { MerkleTree } from "./merkle";
 import { getTonBagDetails } from "./tonsutils";
+import {configs} from "../config";
 
 type WD =
   | {
@@ -39,7 +40,7 @@ if (isMainThread) {
   };
 
   module.exports = {
-    getProofs(bag_id: string, random: number) {
+    getProofs(bag_id: string, random: number): Promise<bigint[]> {
       return new Promise<bigint[]>((resolve, reject) => {
         reqGenWork({ type: "getProofs", bag_id: bag_id, random }, reject).then((w) => {
           w.on("message", resolve);
@@ -47,7 +48,7 @@ if (isMainThread) {
       });
     },
 
-    getMerkleRoot(bag_id: string) {
+    getMerkleRoot(bag_id: string): Promise<bigint[]> {
       return new Promise<bigint[]>((resolve, reject) => {
         reqGenWork({ type: "getMerkleRoot", bag_id: bag_id }, reject).then((w) => {
           w.on("message", resolve);

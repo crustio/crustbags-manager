@@ -10,9 +10,9 @@ export const getEnvOrExit = (key: string, defaultValue: string = "", exit: boole
   return result;
 }
 
-export function sleep(ms: number) {
+export function sleep(s: number) {
   return new Promise(resolve => {
-    setTimeout(resolve, ms);
+    setTimeout(resolve, s * 1000);
   });
 }
 
@@ -20,7 +20,7 @@ export function now() {
   return Math.round(new Date().getTime()/1000);
 }
 
-export const fetchWithRetry = async<T>(func: Promise<T>, retries: number = 3, retryDelay = 1000): Promise<T> => {
+export const fetchWithRetry = async<T>(func: Promise<T>, retries: number = 3, retryDelay = 1): Promise<T> => {
   let err;
   for (let i = 0; i < retries; i++) {
     try {

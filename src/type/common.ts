@@ -18,6 +18,7 @@ export enum TaskState {
     download_torrent_child_file_start = 3,
     download_torrent_success = 4,
     submit_storage_proof = 5,
+    proof_success_wait_for_update_state = 6,
     period_finish = 6,
     task_finish = 7
 }

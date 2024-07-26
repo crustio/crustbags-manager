@@ -11,13 +11,13 @@ export const configs = {
     // TON Archive server host
     ton: {
         host: getEnvOrExit("TON_ARCHIVE_NODE_HOST", "", !isDev),
-        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "EQAiRfFdxEf5dmSb2cEpq8pjhyHts6hmoI1woHqLRPRwZKuw"),
+        tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "EQBOOMNqG0rvNm6vFGfR4qZl48BTDw_gYefVI4DQ70t9GoPC"),
     },
     task: {
         minReward: BigInt(getEnvOrExit("TASK_MIN_REWARD", "0", false)),
         maxFileSize: BigInt(getEnvOrExit("TASK_MAX_FILE_SIZE", "10485760", false)),
-        providerMnemonic: getEnvOrExit("TASK_PROVIDER_MNEMONIC"),
+        providerMnemonic: getEnvOrExit("TASK_PROVIDER_MNEMONIC", ""),
         providerMinBalance: getEnvOrExit("TASK_PROVIDER_MIN_BALANCE", "1000000000"),
     },
-    tonStorageUtilsApi: getEnvOrExit('TON_STORAGE_UTILS_API', 'http://localhost:3000')
+    tonStorageUtilsApi: getEnvOrExit('TON_STORAGE_UTILS_API', 'http://localhost:8192'),
 }

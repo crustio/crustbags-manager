@@ -40,6 +40,10 @@ export class Order {
                 type: DataTypes.BIGINT,
                 allowNull: false
             },
+            max_storage_provider_count: {
+                type: DataTypes.BIGINT,
+                allowNull: false
+            },
             treasury_info: {
                 type: DataTypes.TEXT,
                 allowNull: false
