@@ -7,7 +7,7 @@ import {getTonProvider} from "../util/ton";
 import {mnemonicToWalletKey} from "@ton/crypto";
 import {configs} from "../config";
 import {Address, OpenedContract, WalletContractV4} from "@ton/ton";
-import {StorageContract} from "../wrapper/StorageContract";
+import {Op} from "sequelize";
 const node = require('../merkle/node')
 
 export async function registerStorageProvider() {
@@ -29,7 +29,12 @@ export async function registerStorageProvider() {
             continue;
         }
         for (const task of tasks) {
-            await registerProvider(task);
+            try {
+                await registerProvider(task);
+            } catch (e) {
+                logger.error(`Register provider failed: ${e.message}`);
+                await sleep(1);
+            }
         }
     }
 }
@@ -45,12 +50,27 @@ async function registerProvider(task: any) {
     const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
     const storageContract = provider.getStorageContract(order.address);
     const walletContract = provider.getTonClient().open(wallet);
+    const providerAddress = wallet.address;
     const sender = walletContract.sender(key.secretKey);
-    let registerSuccess = await checkRegisterSuccess(wallet.address, order.address, false);
+    let registerSuccess = await checkRegisterSuccess(providerAddress, order.address, false);
     if (registerSuccess) {
+        const lastProofTime = await storageContract.getStorageProviderLastProofTime(providerAddress);
         return await Task.model.update({
             task_state: TaskState.submit_storage_proof,
+            last_proof_time: lastProofTime,
+            next_proof_time: (BigInt(lastProofTime) + BigInt(order.max_storage_proof_span_in_sec)).toString(),
             provider_address: wallet.address.toString()
+        }, {
+            where: {
+                id: task.id
+            }
+        });
+    }
+    // check provider count
+    const providerCount = await storageContract.getResidueProviderCount();
+    if (providerCount <= 0) {
+        return await Task.model.update({
+            task_state: TaskState.more_than_max_storage_provider_count,
         }, {
             where: {
                 id: task.id
@@ -60,8 +80,11 @@ async function registerProvider(task: any) {
     await storageContract.sendRegisterAsStorageProvider(sender);
     registerSuccess = await checkRegisterSuccess(wallet.address, order.address);
     if (registerSuccess) {
+        const lastProofTime = await storageContract.getStorageProviderLastProofTime(providerAddress);
         await Task.model.update({
             task_state: TaskState.submit_storage_proof,
+            last_proof_time: lastProofTime,
+            next_proof_time: (BigInt(lastProofTime) + BigInt(order.max_storage_proof_span_in_sec)).toString(),
             provider_address: sender.address.toString()
         }, {
             where: {
@@ -77,7 +100,6 @@ async function registerProvider(task: any) {
 async function checkRegisterSuccess(address: Address, orderAddress: string, retry: boolean = true): Promise<boolean> {
     const provider = await getTonProvider();
     const storageContract = provider.getStorageContract(orderAddress);
-    console.log(`userAddress: ${address.toString()}`)
     let nextProof = await storageContract.getNextProof(address);
     if (retry) {
         let retryTimes = 0;
@@ -95,38 +117,55 @@ async function getProviderAddress(): Promise<Address> {
     return wallet.address;
 }
 
-async function checkBalance(): Promise<boolean> {
-    const provider = await getTonProvider();
-    const address = await getProviderAddress();
-    if (!await provider.getTonClient().isContractDeployed(address)) {
-        logger.error("Provider wallet not deployed");
+async function checkBalance(address?: Address): Promise<boolean> {
+    try {
+        const provider = await getTonProvider();
+        let tonAddress: Address;
+        if (address) {
+            tonAddress = address;
+        } else {
+            tonAddress = await getProviderAddress();
+        }
+        if (!await provider.getTonClient().isContractDeployed(tonAddress)) {
+            logger.error("Provider wallet not deployed");
+            return false;
+        }
+        const balance = await provider.getTonClient().getBalance(tonAddress);
+        const providerMinBalance = BigInt(configs.task.providerMinBalance);
+        if (balance < providerMinBalance) {
+            logger.error(`Provider${address.toString()} balance ${balance} is not enough: ${providerMinBalance}`);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        logger.error(`Check balance failed: ${e.message}`);
         return false;
     }
-    const balance = await provider.getTonClient().getBalance(address);
-    const providerMinBalance = BigInt(configs.task.providerMinBalance);
-    if (balance < providerMinBalance) {
-        logger.error(`Provider balance ${balance} is not enough: ${providerMinBalance}`);
-        return false;
-    }
-    return true;
+
 }
 
 export async function uploadStorageProofs() {
     while (true) {
         const tasks = await Task.model.findAll({
             where: {
-                task_state: TaskState.submit_storage_proof
+                task_state: TaskState.submit_storage_proof,
+                next_proof_time: {
+                    [Op.lte]: (now() - Number(configs.task.submitStorageProofBefore))
+                }
             },
             order: [
-                ['last_proof_time', 'ASC']
+                ['next_proof_time', 'ASC']
             ],
-            limit: 100
+            limit: 10
         });
         if (tasks.length === 0) {
-            await sleep(10);
+            await sleep(5);
             continue;
         }
         for (const task of tasks) {
+            if (!await checkBalance(Address.parse(task.provider_address))) {
+                continue;
+            }
             try {
                 await submitStorageProof(task);
             } catch (e) {
@@ -188,6 +227,7 @@ async function submitStorageProof(task: any) {
     if (lastProofTime) {
         await Task.model.update({
             last_proof_time: lastProofTime,
+            next_proof_time: (BigInt(lastProofTime) + BigInt(order.max_storage_proof_span_in_sec)).toString(),
         }, {
             where: {
                 id: task.id
@@ -243,7 +283,9 @@ async function updateProviderState(task: any) {
         const lastProofTime = await storageContract.getStorageProviderLastProofTime(Address.parse(task.provider_address));
         if (lastProofTime != null && lastProofTime > task.last_proof_time) {
             await Task.model.update({
-                task_state: TaskState.submit_storage_proof
+                task_state: TaskState.submit_storage_proof,
+                last_proof_time: lastProofTime,
+                next_proof_time: (BigInt(lastProofTime) + BigInt(order.max_storage_proof_span_in_sec)).toString()
             }, {
                 where: {
                     id: task.id
@@ -255,7 +297,7 @@ async function updateProviderState(task: any) {
         retry++;
     }
     await Task.model.update({
-        task_state: TaskState.submit_storage_proof
+        task_state: TaskState.submit_storage_proof,
     }, {
         where: {
             id: task.id

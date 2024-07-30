@@ -17,9 +17,19 @@ export async function job() {
     const uploadProof = uploadStorageProofs();
     const updateProofState = updateStorageProviderState();
     const claim = claimRewards();
-    const jobs = [queryTx, analysisTx,
-        updateOrder, generate, downloadHeaders, downloadChild,
-        fileState, register, uploadProof, updateProofState, claim];
+    const jobs = [
+        queryTx,
+        analysisTx,
+        updateOrder,
+        generate,
+        downloadHeaders,
+        downloadChild,
+        fileState,
+        register,
+        uploadProof,
+        updateProofState,
+        claim
+    ];
     return Promise.all(jobs).catch(e => {
         logger.error(`Error in jobs: ${e.stack}`);
         throw new Error(e);

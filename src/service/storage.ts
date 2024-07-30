@@ -33,13 +33,14 @@ export async function downloadTorrentHeaders() {
             const torrentHash = order.torrent_hash;
 
             try {
-                const result = await checkHeaderDownloaded(torrentHash, task);
+                const result = await checkDownloadState(torrentHash, task);
                 if (result) {
                     continue;
                 }
                 await addTonBag(torrentHash);
             } catch (e) {
                 logger.error(`Failed to download meta bag ${torrentHash}: ${e}`);
+                continue;
             }
             await Task.model.update({
                 task_state: TaskState.download_torrent_start
@@ -52,7 +53,7 @@ export async function downloadTorrentHeaders() {
     }
 }
 
-async function checkHeaderDownloaded(torrentHash: string, task: any){
+async function checkDownloadState(torrentHash: string, task: any){
     const bagDetail = await getTonBagDetails(torrentHash);
     if (bagDetail.downloaded === bagDetail.size) {
         await Task.model.update({
@@ -96,13 +97,14 @@ export async function downloadChildFiles() {
             }))[0];
             const torrentHash = order.torrent_hash;
             try {
-                const result = await checkHeaderDownloaded(torrentHash, task);
+                const result = await checkDownloadState(torrentHash, task);
                 if (result) {
                     continue;
                 }
                 await downloadChildTonBag(torrentHash);
             } catch (e) {
                 logger.error(`Failed to download child bag ${torrentHash}: ${e}`);
+                continue;
             }
             await Task.model.update({
                 task_state: TaskState.download_torrent_child_file_start

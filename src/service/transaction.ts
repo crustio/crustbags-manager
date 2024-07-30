@@ -26,7 +26,7 @@ export async function indexPlaceOrderTransactions() {
         }
         // no transaction waiting
         if (state.lastTransaction == null) {
-            logger.info(`No transactions found for contract ${TON_BAG_ADDRESS}`);
+            logger.info(`No last transactions found for contract ${TON_BAG_ADDRESS}`);
             await sleep(10);
             continue;
         }
@@ -51,6 +51,7 @@ export async function indexPlaceOrderTransactions() {
 async function queryTransactions(address: Address, ton: TonProvider, lastTransaction: TonTransaction) {
     const exist = await saveTransaction(lastTransaction);
     if (exist) {
+        logger.info("Last transaction exist....");
         return;
     }
     let {prevTransactionLt, prevTransactionHash} = lastTransaction;

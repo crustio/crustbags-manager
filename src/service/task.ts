@@ -69,6 +69,7 @@ async function generateTask(provider: TonProvider, order: any, transaction: DBTr
         const lastProofTime = await contract.getStorageProviderLastProofTime(providerAddress);
         await Task.model.create({
             order_id: order.id,
+            provider_address: providerAddress.toString(),
             last_proof_time: lastProofTime,
             task_state: TaskState.unregister_storage_provider,
         }, {

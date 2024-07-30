@@ -51,7 +51,7 @@ export async function updateOrderState() {
                     [Op.and]: {
                         started: 1,
                         period_finish: {
-                            [Op.lt]: Date.now()
+                            [Op.gte]: now()
                         }
                     },
                     started: 0
@@ -69,7 +69,7 @@ export async function updateOrderState() {
         }
         for (const order of orders) {
             const contract: OpenedContract<StorageContract> = provider.getStorageContract(order.address);
-            const orderState = contract.getOrderInfo();
+            const orderState = await contract.getOrderState();
             if (orderState == null) {
                 await Order.model.update({
                     order_state: OrderState.invalid

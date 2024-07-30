@@ -288,7 +288,7 @@ export class StorageContract implements Contract {
         const orderInfo = this.loadOrderInfo(cell);
         const rewardsParams = this.loadRewardsParams(cell);
         return {
-            address: this.address,
+            address: this.address.toString(),
             ...orderInfo,
             started: rewardsParams.started,
             total_rewards: rewardsParams.total_rewards,

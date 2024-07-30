@@ -20,5 +20,6 @@ export enum TaskState {
     submit_storage_proof = 5,
     proof_success_wait_for_update_state = 6,
     period_finish = 6,
-    task_finish = 7
+    task_finish = 7,
+    more_than_max_storage_provider_count = -1,
 }

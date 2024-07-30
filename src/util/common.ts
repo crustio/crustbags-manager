@@ -16,7 +16,7 @@ export function sleep(s: number) {
   });
 }
 
-export function now() {
+export function now(): number {
   return Math.round(new Date().getTime()/1000);
 }
 

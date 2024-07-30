@@ -18,6 +18,7 @@ export const configs = {
         maxFileSize: BigInt(getEnvOrExit("TASK_MAX_FILE_SIZE", "10485760", false)),
         providerMnemonic: getEnvOrExit("TASK_PROVIDER_MNEMONIC", ""),
         providerMinBalance: getEnvOrExit("TASK_PROVIDER_MIN_BALANCE", "1000000000"),
+        submitStorageProofBefore: getEnvOrExit("TASK_SUBMIT_STORAGE_PROOF_BEFORE", "1800")
     },
     tonStorageUtilsApi: getEnvOrExit('TON_STORAGE_UTILS_API', 'http://localhost:8192'),
 }
