@@ -7,7 +7,8 @@
   "author": "KayleCoder <kalecoder@outlook.com>",
   "license": "MIT",
   "scripts": {
-    "build": "gts clean && tsc"
+    "build": "gts clean && tsc",
+    "dev": "node --require ts-node/register src/index.ts"
   },
   "dependencies": {
     "@orbs-network/ton-access": "^2.3.3",
@@ -15,6 +16,7 @@
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.11.2",
     "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
     "js-sha256": "^0.11.0",
     "sequelize": "^6.35.2",
     "sqlite3": "^5.1.7",

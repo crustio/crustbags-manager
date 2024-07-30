@@ -32,8 +32,8 @@ const defaultLogger = createLogger({
     // - Write all logs error (and below) to `crust-api-error.log`.
     //
     new transports.Console(),
-    new transports.File({ filename: 'tonbags-manager-error.log', level: 'error' }),
-    new transports.File({ filename: 'tonbags-manager.log' }),
+    new transports.File({ filename: 'tonbags-manager-error.log', dirname: 'log', level: 'error' }),
+    new transports.File({ filename: 'tonbags-manager.log', dirname: 'log' }),
   ],
 });
 

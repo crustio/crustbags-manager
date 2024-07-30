@@ -1,0 +1,13 @@
+---
+version: "3.7"
+
+services:
+  manager:
+    container_name: tonbags-manager
+    image: crustio/tonbags-manager:latest
+    restart: always
+    env_file:
+      - ".env"
+    volumes:
+      - ./data:/app/data
+      - ./log:/app/log

@@ -1,6 +1,6 @@
 import {getEnvOrExit} from "../util/common";
 import {ENV} from "../type/common";
-
+require('dotenv').config();
 export const env = getEnvOrExit("ENV", "dev") as ENV;
 
 export const isDev = env === "dev";
@@ -10,7 +10,7 @@ export const configs = {
     dbPath: getEnvOrExit("DB_PATH", "./data"),
     // TON Archive server host
     ton: {
-        host: getEnvOrExit("TON_ARCHIVE_NODE_HOST", "", !isDev),
+        host: getEnvOrExit("TON_RPC_URL", "", !isDev),
         tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "EQBOOMNqG0rvNm6vFGfR4qZl48BTDw_gYefVI4DQ70t9GoPC"),
     },
     task: {
