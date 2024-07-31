@@ -3,15 +3,16 @@ import {TaskState} from "../type/common";
 import {sleep} from "../util/common";
 import {Order} from "../dao/order";
 import {
-    addTonBag,
+    addTonBag, BagDetail,
     downloadChildTonBag,
     downloadHeaderSuccess,
-    downloadTonBagSuccess,
+    downloadTonBagSuccess, FilesItem, getStorageRealFilePath,
     getTonBagDetails
 } from "../merkle/tonsutils";
 import {logger} from "../util/logger";
 import {Op} from "sequelize";
 import {configs} from "../config";
+import * as fs from "fs";
 
 export async function downloadTorrentHeaders() {
     while(true) {
@@ -34,7 +35,7 @@ export async function downloadTorrentHeaders() {
             const torrentHash = order.torrent_hash;
 
             try {
-                const result = await checkDownloadState(torrentHash, task);
+                const result = await correctDownloadFileState(torrentHash, task);
                 if (result) {
                     continue;
                 }
@@ -71,32 +72,46 @@ export async function downloadTorrentHeaders() {
     }
 }
 
-async function checkDownloadState(torrentHash: string, task: any){
+async function correctDownloadFileState(torrentHash: string, task: any, header: boolean = true){
     const bagDetail = await getTonBagDetails(torrentHash);
     if (bagDetail == null) {
         return false;
     } else if (bagDetail.header_loaded === true) {
-        if (bagDetail.downloaded > 0 && bagDetail.downloaded === bagDetail.size) {
+        if (header) {
             await Task.model.update({
-                task_state: TaskState.download_torrent_success
+                task_state: TaskState.download_torrent_header_success
             }, {
                 where: {
                     id: task.id
                 }
             });
-            return true;
+            return true
         }
-        await Task.model.update({
-            task_state: TaskState.download_torrent_header_success
-        }, {
-            where: {
-                id: task.id
+        if (bagDetail.downloaded > 0 && bagDetail.downloaded === bagDetail.size) {
+            // check files exist
+            let allExist = true;
+            for (const file of bagDetail.files) {
+                const filePath = getStorageRealFilePath(bagDetail, file);
+                if (!fs.existsSync(filePath)) {
+                    allExist = false;
+                }
             }
-        });
-        return true;
+            if (allExist) {
+                await Task.model.update({
+                    task_state: TaskState.download_torrent_success
+                }, {
+                    where: {
+                        id: task.id
+                    }
+                });
+                return allExist;
+            }
+        }
     }
     return false;
 }
+
+
 
 export async function downloadChildFiles() {
     while (true) {
@@ -118,7 +133,7 @@ export async function downloadChildFiles() {
             }))[0];
             const torrentHash = order.torrent_hash;
             try {
-                const result = await checkDownloadState(torrentHash, task);
+                const result = await correctDownloadFileState(torrentHash, task, false);
                 if (result) {
                     continue;
                 }

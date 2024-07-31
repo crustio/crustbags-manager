@@ -12,7 +12,8 @@ export const configs = {
     ton: {
         host: getEnvOrExit("TON_RPC_URL", "", !isDev),
         tonbag_address: getEnvOrExit("TON_BAG_ADDRESS", "EQBOOMNqG0rvNm6vFGfR4qZl48BTDw_gYefVI4DQ70t9GoPC"),
-        downloadPath: getEnvOrExit("TON_FILE_DOWNLOAD_PATH", "/root/downloads"),
+        downloadPath: getEnvOrExit("TON_FILE_DOWNLOAD_PATH", "downloads"),
+        storageMountPath: getEnvOrExit("TON_FILE_MOUNT_PATH", "/root"),
     },
     task: {
         minReward: BigInt(getEnvOrExit("TASK_MIN_REWARD", "0", false)),

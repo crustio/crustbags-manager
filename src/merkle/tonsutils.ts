@@ -1,4 +1,5 @@
 import { configs, env } from "../config";
+import fs from "fs";
 
 export type FilesItem = {
   index: number;
@@ -94,11 +95,24 @@ export async function downloadChildTonBag(bag_id: string) {
 }
 
 export async function downloadTonBagSuccess(bag_id: string): Promise<boolean> {
-    const bd = await getTonBagDetails(bag_id);
-    if (bd) {
-      return bd.downloaded == bd.size;
+    const bagDetail = await getTonBagDetails(bag_id);
+    let allExist = true;
+    for (const file of bagDetail.files) {
+        const filePath = getStorageRealFilePath(bagDetail, file);
+        if (!fs.existsSync(filePath)) {
+            allExist = false;
+            return allExist;
+        }
     }
-    return false;
+    return allExist;
+}
+
+export function getStorageRealFilePath(bagDetail: BagDetail, file: FilesItem): string {
+    if (bagDetail.path.startsWith("/")) {
+        return `${bagDetail.path}/${bagDetail.dir_name}${file.name}`;
+    } else {
+        return `${configs.ton.storageMountPath}/${bagDetail.path}/${bagDetail.dir_name}${file.name}`;
+    }
 }
 
 export async function downloadHeaderSuccess(bag_id: string): Promise<boolean> {
