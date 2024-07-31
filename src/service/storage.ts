@@ -11,6 +11,7 @@ import {
 } from "../merkle/tonsutils";
 import {logger} from "../util/logger";
 import {Op} from "sequelize";
+import {configs} from "../config";
 
 export async function downloadTorrentHeaders() {
     while(true) {
@@ -39,7 +40,22 @@ export async function downloadTorrentHeaders() {
                 }
                 await addTonBag(torrentHash);
             } catch (e) {
-                logger.error(`Failed to download meta bag ${torrentHash}: ${e}`);
+                logger.error(`Failed to download meta bag ${torrentHash}: ${e.message}`);
+                const retryTimes = task.download_header_retry_times + 1;
+                let item: any = {
+                    download_header_retry_times: retryTimes
+                }
+                if (retryTimes > Number(configs.task.maxDownloadHeaderTimes)) {
+                    item = {
+                        ...item,
+                        task_state: TaskState.download_torrent_header_failed
+                    }
+                }
+                await Task.model.update(item, {
+                    where: {
+                        id: task.id
+                    }
+                });
                 continue;
             }
             await Task.model.update({
@@ -55,17 +71,19 @@ export async function downloadTorrentHeaders() {
 
 async function checkDownloadState(torrentHash: string, task: any){
     const bagDetail = await getTonBagDetails(torrentHash);
-    if (bagDetail.downloaded === bagDetail.size) {
-        await Task.model.update({
-            task_state: TaskState.download_torrent_success
-        }, {
-            where: {
-                id: task.id
-            }
-        });
-        return true;
-    }
-    if (bagDetail.header_loaded === true) {
+    if (bagDetail == null) {
+        return false;
+    } else if (bagDetail.header_loaded === true) {
+        if (bagDetail.downloaded > 0 && bagDetail.downloaded === bagDetail.size) {
+            await Task.model.update({
+                task_state: TaskState.download_torrent_success
+            }, {
+                where: {
+                    id: task.id
+                }
+            });
+            return true;
+        }
         await Task.model.update({
             task_state: TaskState.download_torrent_header_success
         }, {
@@ -75,6 +93,7 @@ async function checkDownloadState(torrentHash: string, task: any){
         });
         return true;
     }
+    return false;
 }
 
 export async function downloadChildFiles() {
@@ -103,7 +122,22 @@ export async function downloadChildFiles() {
                 }
                 await downloadChildTonBag(torrentHash);
             } catch (e) {
-                logger.error(`Failed to download child bag ${torrentHash}: ${e}`);
+                logger.error(`Failed to download child bag ${torrentHash}: ${e.message}`);
+                const retryTimes = task.download_child_retry_times + 1;
+                let item: any = {
+                    download_child_retry_times: retryTimes
+                }
+                if (retryTimes > Number(configs.task.maxDownloadChildTimes)) {
+                    item = {
+                        ...item,
+                        task_state: TaskState.download_torrent_child_file_failed
+                    }
+                }
+                await Task.model.update(item, {
+                    where: {
+                        id: task.id
+                    }
+                });
                 continue;
             }
             await Task.model.update({

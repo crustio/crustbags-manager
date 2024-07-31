@@ -45,7 +45,17 @@ export class Task {
                 type: DataTypes.BIGINT,
                 allowNull: false,
                 defaultValue: 0
-            }
+            },
+            download_header_retry_times: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0
+            },
+            download_child_retry_times: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0
+            },
         }, {
             indexes: [
                 {

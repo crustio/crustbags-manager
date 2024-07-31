@@ -41,13 +41,25 @@ export function sleep(time: number) {
 const baseUrl = configs.tonStorageUtilsApi
 export async function getTonBagDetails(bag_id: string) {
   return fetch(`${baseUrl}/api/v1/details?bag_id=${bag_id}`)
-    .then((res) => res.json())
-    .then((item) => item as BagDetail);
+    .then((res) => {
+      if (res.status == 200 || res.status == 404) {
+        return res.json()
+      } else {
+        throw new Error("Call storage api failed")
+      }
+    })
+    .then((item) => {
+        const bagId = item.bag_id
+        if (bagId === undefined) {
+            return null;
+        }
+        return item as BagDetail;
+    });
 }
 
 export async function addTonBag({
   bag_id,
-  path = "/root/downloads",
+  path = configs.ton.downloadPath,
   files = [],
   donwload_all = false,
 }: {
@@ -67,29 +79,6 @@ export async function addTonBag({
   });
 }
 
-export async function downloadTonBag(bag_id: string, waitCompleted: boolean = false) {
-  await addTonBag({ bag_id });
-  let bd: BagDetail;
-  // check header
-  while (true) {
-    await sleep(1);
-    bd = await getTonBagDetails(bag_id);
-    if (bd.header_loaded) {
-      break;
-    }
-  }
-  // down all
-  await addTonBag({ bag_id, files: bd.files.map((f) => f.index), donwload_all: true });
-  // check all
-  while (waitCompleted) {
-    await sleep(2000);
-    bd = await getTonBagDetails(bag_id);
-    if (bd.downloaded == bd.size) {
-      return true;
-    }
-  }
-  return true
-}
 
 export async function downloadChildTonBag(bag_id: string) {
   const bd = await getTonBagDetails(bag_id);
@@ -100,10 +89,16 @@ export async function downloadChildTonBag(bag_id: string) {
 
 export async function downloadTonBagSuccess(bag_id: string): Promise<boolean> {
     const bd = await getTonBagDetails(bag_id);
-    return bd.downloaded == bd.size;
+    if (bd) {
+      return bd.downloaded == bd.size;
+    }
+    return false;
 }
 
 export async function downloadHeaderSuccess(bag_id: string): Promise<boolean> {
     const bd = await getTonBagDetails(bag_id);
-    return bd.header_loaded;
+    if (bd) {
+      return bd.header_loaded;
+    }
+    return false;
 }

@@ -22,4 +22,6 @@ export enum TaskState {
     period_finish = 6,
     task_finish = 7,
     more_than_max_storage_provider_count = -1,
+    download_torrent_header_failed = -2,
+    download_torrent_child_file_failed = -3,
 }

@@ -254,7 +254,7 @@ export class StorageContract implements Contract {
             const storageProvidersInfo = ds.loadRef();
             const storageProvidersInfoDs = storageProvidersInfo.beginParse();
             const storageProviders = storageProvidersInfoDs.loadDict<bigint, Cell>(number256DictionaryKey, cellDictionaryValue);
-            const {max_storage_provider_count} = this.loadOrderInfo(orderInfo);
+            const {max_storage_provider_count} = this.loadOrderInfo(firstCell);
             return max_storage_provider_count - storageProviders.size;
         }
         return 0;

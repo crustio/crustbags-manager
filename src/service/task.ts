@@ -8,9 +8,6 @@ import {sleep} from "../util/common";
 import {sequelize} from "../db";
 import {Task} from "../dao/task";
 import {LAST_TASK_GENERATE_ORDER_ID} from "./constants";
-import {Address, OpenedContract} from "@ton/ton";
-import {Cell} from "@ton/core";
-import {StorageContract} from "../wrapper/StorageContract";
 
 export async function generateTasks() {
     while(true) {
