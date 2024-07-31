@@ -38,7 +38,9 @@ export async function downloadTorrentHeaders() {
                 if (result) {
                     continue;
                 }
-                await addTonBag(torrentHash);
+                await addTonBag({
+                    bag_id: torrentHash,
+                });
             } catch (e) {
                 logger.error(`Failed to download meta bag ${torrentHash}: ${e.message}`);
                 const retryTimes = task.download_header_retry_times + 1;

@@ -76,6 +76,12 @@ export async function addTonBag({
       files,
       donwload_all,
     }),
+  }).then((res: Response) => {
+      if (res.status == 200) {
+          return res.json()
+      } else {
+          throw new Error(`Call storage api failed: ${res.status}`)
+      }
   });
 }
 
