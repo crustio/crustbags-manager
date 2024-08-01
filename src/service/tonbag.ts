@@ -104,6 +104,7 @@ async function checkRegisterSuccess(address: Address, orderAddress: string, retr
     if (retry) {
         let retryTimes = 0;
         while (nextProof == -1n && retryTimes < 10) {
+            await sleep(3);
             nextProof = await storageContract.getNextProof(address);
             retryTimes++;
         }
