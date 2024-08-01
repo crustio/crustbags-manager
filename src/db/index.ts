@@ -8,10 +8,4 @@ export const sequelize = new Sequelize({
 });
 
 
-export async function initDb() {
-    await sequelize.sync();
-}
 
-export async function disconnect() {
-    await sequelize.close();
-}

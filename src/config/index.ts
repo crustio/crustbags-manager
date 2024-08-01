@@ -17,7 +17,8 @@ export const configs = {
     },
     task: {
         minReward: BigInt(getEnvOrExit("TASK_MIN_REWARD", "0", false)),
-        maxFileSize: BigInt(getEnvOrExit("TASK_MAX_FILE_SIZE", "10485760", false)),
+        maxFileSize: BigInt(getEnvOrExit("TASK_MAX_FILE_SIZE", "1073741824", false)),
+        orderMinPrice: BigInt(getEnvOrExit("TASK_MIN_PRICE_G_D", "0", false)),
         providerMnemonic: getEnvOrExit("TASK_PROVIDER_MNEMONIC", ""),
         providerMinBalance: getEnvOrExit("TASK_PROVIDER_MIN_BALANCE", "1000000000"),
         submitStorageProofBefore: getEnvOrExit("TASK_SUBMIT_STORAGE_PROOF_BEFORE", "1800"),

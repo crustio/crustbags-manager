@@ -8,6 +8,7 @@ import {sleep} from "../util/common";
 import {sequelize} from "../db";
 import {Task} from "../dao/task";
 import {LAST_TASK_GENERATE_ORDER_ID} from "./constants";
+import {configs} from "../config";
 
 export async function generateTasks() {
     while(true) {
@@ -20,6 +21,15 @@ export async function generateTasks() {
                 },
                 order_state: {
                     [Op.gte]: OrderState.not_started
+                },
+                file_size_in_bytes: {
+                    [Op.lte]: configs.task.maxFileSize.toString()
+                },
+                total_rewards: {
+                    [Op.gte]: configs.task.minReward.toString()
+                },
+                order_price: {
+                    [Op.gte]: configs.task.orderMinPrice.toString()
                 }
             },
             limit: 10,

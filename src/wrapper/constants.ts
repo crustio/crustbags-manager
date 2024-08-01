@@ -1,3 +1,6 @@
+export const ONE_DAY = 24 * 60 * 60;
+export const ONE_TON = 1000000000; //10^9
+export const ONE_GIGA = 1024 * 1024 * 1024;
 export const default_storage_period = 60n * 60n * 24n * 180n;
 export const default_max_storage_proof_span = 60n * 60n * 24n;
 export const default_max_storage_providers_per_order = 30n;

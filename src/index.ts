@@ -1,5 +1,5 @@
-import {initDb} from "./db";
 import {logger} from "./util/logger";
+import {initDb} from "./dao/common";
 import {job} from "./service/job";
 
 async function main() {

@@ -12,13 +12,13 @@ import {
 import {Address} from "@ton/ton";
 import {
     op_recycle_undistributed_storage_fees, op_unregister_as_storage_provider, op_submit_storage_proof,
-    op_register_as_storage_provider, op_claim_storage_rewards
+    op_register_as_storage_provider, op_claim_storage_rewards, ONE_TON, ONE_DAY, ONE_GIGA
 } from './constants';
 import {proofsIntoBody} from "./proofsutils";
-import {TonProvider} from "../util/ton";
 import {logger} from "../util/logger";
 import {OrderState} from "../type/common";
 import {now} from "../util/common";
+import BigNumber from "bignumber.js";
 
 export type StorageContractConfig = {};
 
@@ -287,6 +287,7 @@ export class StorageContract implements Contract {
         const cell = cells[0];
         const orderInfo = this.loadOrderInfo(cell);
         const rewardsParams = this.loadRewardsParams(cell);
+        const orderPrice = this.loadOrderPrice(orderInfo.file_size_in_bytes, orderInfo.storage_period_in_sec, rewardsParams.total_rewards);
         return {
             address: this.address.toString(),
             ...orderInfo,
@@ -294,6 +295,7 @@ export class StorageContract implements Contract {
             total_rewards: rewardsParams.total_rewards,
             period_finish: rewardsParams.period_finish,
             order_detail: JSON.stringify(rewardsParams),
+            order_price: orderPrice,
             order_state: this.parseOrderState(rewardsParams.started, rewardsParams.period_finish)
         };
     }
@@ -348,6 +350,13 @@ export class StorageContract implements Contract {
             max_storage_provider_count,
             treasury_info: JSON.stringify(treasury_info)
         }
+    }
+
+    loadOrderPrice(file_size_in_bytes: number, storage_period_in_sec: number, total_rewards: number): string {
+        const tonReward = new BigNumber(total_rewards).dividedBy(ONE_TON);
+        const periodInDay = new BigNumber(storage_period_in_sec).dividedBy(ONE_DAY);
+        const fileSizeInGb = new BigNumber(file_size_in_bytes).dividedBy(ONE_GIGA);
+        return tonReward.dividedBy(periodInDay).dividedBy(fileSizeInGb).toFixed(5, 1)
     }
 
     loadRewardsParams(cell: Cell): {

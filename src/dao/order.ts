@@ -67,6 +67,11 @@ export class Order {
                 allowNull: false,
                 defaultValue: "{}"
             },
+            order_price: {
+                type: DataTypes.DECIMAL(20, 6),
+                allowNull: false,
+                defaultValue: 0
+            },
             order_state: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
@@ -91,7 +96,7 @@ export class Order {
                 },
                 {
                     fields: ["order_state"]
-                }
+                },
             ]
         }
     )
