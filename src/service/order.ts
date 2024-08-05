@@ -97,6 +97,21 @@ export async function updateOrderState() {
  * @param id transaction.id
  */
 async function parseAndSaveOrder(ton: TonProvider, address: string, id: number) {
+    const existDbOrder = await Order.model.findOne({
+        where: {
+            address
+        }
+    });
+    if (existDbOrder) {
+        await Transaction.model.update({
+            need_save_order: Valid.FALSE
+        }, {
+            where: {
+                id
+            },
+        });
+        return;
+    }
     const contract: OpenedContract<StorageContract> = ton.getStorageContract(address);
     const order = await contract.getOrderState();
     if (order == null) {
