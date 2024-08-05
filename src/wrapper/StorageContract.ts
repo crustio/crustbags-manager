@@ -202,7 +202,7 @@ export class StorageContract implements Contract {
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: messsage.endCell(),
-            value: toNano('0.1'),
+            value: toNano('0.01'),
         });
     }
 
