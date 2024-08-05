@@ -59,7 +59,7 @@ async function registerProvider(task: any) {
             task_state: TaskState.submit_storage_proof,
             last_proof_time: lastProofTime,
             next_proof_time: (BigInt(lastProofTime) + BigInt(order.max_storage_proof_span_in_sec)).toString(),
-            provider_address: wallet.address.toString()
+            provider_address: providerAddress.toString()
         }, {
             where: {
                 id: task.id
@@ -294,7 +294,7 @@ async function updateProviderState(task: any) {
             });
             return;
         }
-        await sleep(1);
+        await sleep(6);
         retry++;
     }
     await Task.model.update({
