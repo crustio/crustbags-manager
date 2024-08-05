@@ -3,7 +3,6 @@ import path from "path";
 import { isMainThread, parentPort, Worker, workerData } from "worker_threads";
 import { MerkleTree } from "./merkle";
 import { getTonBagDetails } from "./tonsutils";
-import {configs} from "../config";
 
 type WD =
   | {
@@ -84,7 +83,7 @@ if (isMainThread) {
     const mt = new MerkleTree();
     await mt.genTree(fc);
     if (wd.type == "getProofs") {
-      const dap = await mt.getDataAndProofs(fc, Math.floor(wd.random / fc.size));
+      const dap = await mt.getDataAndProofs(fc, Math.floor(wd.random / mt.opt.chunkSize));
       parentPort.postMessage(dap);
     } else if (wd.type == "getMerkleRoot") {
       parentPort.postMessage(mt.tree[0]);
