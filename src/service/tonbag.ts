@@ -32,7 +32,7 @@ export async function registerStorageProvider() {
             try {
                 await registerProvider(task);
             } catch (e) {
-                logger.error(`Register provider failed: ${e.message}`);
+                logger.error(`Register provider failed: ${e.message} ${e.stack}`);
                 await sleep(1);
             }
         }

@@ -280,7 +280,7 @@ export class StorageContract implements Contract {
     async getOrderState(provider: ContractProvider): Promise<any|null> {
         const orderState = await provider.getState();
         if (orderState.state.type !== "active") {
-            logger.error(`Order contract is not active: ${orderState.state.type}`);
+            logger.error(`Order contract is not active: ${orderState.state.type} address: ${this.address.toString()}`);
             return null;
         }
         const cells = Cell.fromBoc(orderState.state.data!);
