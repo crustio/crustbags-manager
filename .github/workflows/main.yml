@@ -1,4 +1,4 @@
-name: Build tonbags-manager (main)
+name: Build crustbags-manager (main)
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     branches: [ "main" ]
 jobs:
   build:
-    if: github.repository == 'crustio/tonbags-manager'
+    if: github.repository == 'crustio/crustbags-manager'
     runs-on: ubuntu-latest
     strategy:
       matrix:
